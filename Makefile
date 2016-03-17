@@ -49,10 +49,10 @@ lint:
 	flake8 sclust tests
 
 test:
-	python setup.py test
+	nosetests --with-doctest
 
 test-all:
-	tox
+	test
 
 coverage:
 	coverage run --source sclust setup.py test

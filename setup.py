@@ -14,13 +14,11 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [
-    # TODO: put package requirements here
-]
+# read requirements
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
 
-test_requirements = [
-    # TODO: put package test requirements here
-]
+test_requirements = requirements
 
 setup(
     name='sclust',
@@ -33,6 +31,7 @@ setup(
     packages=[
         'sclust',
     ],
+    package_data={'sclust': ['requirements.txt']},
     package_dir={'sclust':
                  'sclust'},
     include_package_data=True,
@@ -46,13 +45,17 @@ setup(
         'License :: OSI Approved :: ISC License (ISCL)',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
+    entry_points={
+        'console_scripts': [
+            'sclust = sclust.sclust:main',
+        ],
+    },
     test_suite='tests',
     tests_require=test_requirements
 )
