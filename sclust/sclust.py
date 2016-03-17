@@ -28,7 +28,7 @@ def tokenize(line):
 
 class Cluster:
     def __init__(self, token_counts):
-        self.token_counts = token_counts
+        self.token_counts = Counter(token_counts)
         self.size = 1
 
     def add(self, tokens):
@@ -52,13 +52,17 @@ def run(batch_size, threshold):
         tokens = Counter(tokenize(line))
         doc_freqs.update(tokens)
         this_norm = norm(tokens, doc_freqs)
+        # What is the word with highest tfidf weight? Used to filter comparisons.
+        top_words = sorted((doc_freqs[token], token) for token in tokens if doc_freqs[token] > 1)
+        top_word = top_words[0][1] if len(top_words) > 0 else None
         best_cluster = -1
         best_score = -1
         for ci, cluster in enumerate(clusters):
-            score = cluster.score(tokens, this_norm, doc_freqs)
-            if score > best_score and score > threshold:
-                best_cluster = ci
-                best_score = score
+            if not top_word or top_word in cluster.token_counts:
+                score = cluster.score(tokens, this_norm, doc_freqs)
+                if score > best_score and score > threshold:
+                    best_cluster = ci
+                    best_score = score
         if best_cluster == -1:
             clusters.append(Cluster(tokens))
             print('%d\t%s\tNA' % (len(clusters)-1, line))
