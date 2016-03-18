@@ -34,6 +34,8 @@ def norm_dict(tokens, idfs):
         d[token] = v
         denom += v*v
     denom = sqrt(denom)
+    if denom == 0:
+        print("WHAT?!", tokens)
     for token, val in d.items():
         d[token] = val / denom
     return d
