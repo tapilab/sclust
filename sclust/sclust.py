@@ -18,7 +18,7 @@ import sys
 
 
 def norm(tokens, doc_freqs, docnum):
-    return sqrt(np.sum(count * idf(token, doc_freqs, docnum)**2
+    return sqrt(np.sum((count * idf(token, doc_freqs, docnum))**2
                        for token, count in tokens.items()))
 
 
