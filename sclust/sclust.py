@@ -54,11 +54,11 @@ def run(batch_size, threshold):
         this_norm = norm(tokens, doc_freqs)
         # What is the word with highest tfidf weight? Used to filter comparisons.
         top_words = sorted((doc_freqs[token], token) for token in tokens if doc_freqs[token] > 1)
-        top_word = top_words[0][1] if len(top_words) > 0 else None
+        top_words = set(w[1] for w in top_words[:2])
         best_cluster = -1
         best_score = -1
         for ci, cluster in enumerate(clusters):
-            if not top_word or top_word in cluster.token_counts:
+            if len(top_words) == 0 or len(top_words & set(cluster.token_counts)) > 0:
                 score = cluster.score(tokens, this_norm, doc_freqs)
                 if score > best_score and score > threshold:
                     best_cluster = ci
