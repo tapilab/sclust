@@ -24,7 +24,7 @@ def print_summary(cluster_counts, clusterid2lines, num_clusters, lineno):
         lines = clusterid2lines[clusterid]
         print('%d\t%s' % (count, lines[0]))
         for line in list(lines)[1:]:
-            print(' \t%s' % line)
+            print(' \t \t%s' % '\t'.join(line.split('\t')[1:]))
     sys.stdout.flush()
 
 def run(frequency, num_clusters, num_docs):
