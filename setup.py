@@ -54,6 +54,7 @@ setup(
     entry_points={
         'console_scripts': [
             'sclust = sclust.sclust:main',
+            'sclust-summarize = sclust.sclust_summarize:main',
         ],
     },
     test_suite='tests',
