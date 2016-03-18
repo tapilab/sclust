@@ -18,10 +18,6 @@ import re
 import sys
 
 
-#def norm(tokens, doc_freqs, docnum):
-#    return sqrt(np.sum((count * idf(token, doc_freqs, docnum))**2
-#                       for token, count in tokens.items()))
-
 def norm(tokens, idfs):
     return sqrt(np.sum((count * idfs[token])**2
                        for token, count in tokens.items()))
@@ -85,7 +81,7 @@ def run(batch_size, threshold, norm_update):
         doc_freqs.update(tokens)
         idfs = {token: idf(token, doc_freqs, docnum) for token, value in doc_freqs.items()}
         normed_doc = norm_dict(tokens, idfs)
-        # What are the words with highest tfidf weight? Use to filter comparisons.
+        # What are the five words with highest tfidf weight? Use to filter comparisons.
         top_words = sorted(tokens, key=lambda x: -normed_doc[x])[:5]  # (doc_freqs[token], token) for token in tokens)
         best_cluster = -1
         best_score = -1
