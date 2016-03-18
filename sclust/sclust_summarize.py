@@ -19,7 +19,7 @@ import re
 import sys
 
 def print_summary(cluster_counts, clusterid2lines, num_clusters, lineno):
-    print('\n---------%d lines---------\n' % lineno)
+    print('\n---------%d documents, %d clusters---------\n' % (lineno, len(cluster_counts)))
     for clusterid, count in cluster_counts.most_common(num_clusters):
         lines = clusterid2lines[clusterid]
         print('%d\t%s' % (count, lines[0]))
