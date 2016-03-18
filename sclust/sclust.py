@@ -78,6 +78,8 @@ def run(batch_size, threshold, norm_update):
         do_update_norm = True if docnum % norm_update == 0 else False
         line = line.strip()
         tokens = Counter(tokenize(line))
+        if len(tokens) == 0:
+            continue
         doc_freqs.update(tokens)
         idfs = {token: idf(token, doc_freqs, docnum) for token, value in doc_freqs.items()}
         normed_doc = norm_dict(tokens, idfs)
