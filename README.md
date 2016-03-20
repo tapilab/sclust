@@ -75,6 +75,7 @@ $ cat /tmp/foo | sclust | sclust-summarize  -k 3
  	 	I am going to sing	0.401597
 1	2	do you sing???	-
 ```
+Here, the first column is cluster frequency, the second column is cluster id. You can optionally print the most recent `k` documents added to the cluster.
 
 The nice thing is you can pipe a large file and see the clusters change as documents are read. E.g., 
 
