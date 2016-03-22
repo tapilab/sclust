@@ -2,13 +2,12 @@
 """A command-line tool to quickly cluster sentences.
 
 usage:
-    sclust [--help --batch <B> --threshold <T> --update-norms <N>]
+    sclust [--help --threshold <T> --update-norms <N>]
 
 Options
     -h, --help
-    -b, --batch <N>        Cluster in batches of this size. [default: 10]
-    -t, --threshold <N>    Similarity threshold in [0,1]. Higher means sentences must be more similar to be merged. [default: .8]
-    -u, --update-norms <N>    Update cluster norms every N documents [default: 1]
+    -t, --threshold <N>    Similarity threshold in [0,1]. Higher means sentences must be more similar to be merged. [default: .2]
+    -u, --update-norms <N>    Update cluster norms every N documents. Larger values reduce run-time, but sacrifice accuracy. [default: 1]
 """
 from collections import Counter, defaultdict
 from docopt import docopt
@@ -66,7 +65,7 @@ def search_index(index, top_words):
         clusters |= index[w]
     return clusters
 
-def run(batch_size, threshold, norm_update):
+def run(threshold, norm_update):
     doc_freqs = Counter()
     clusters = []
     docnum = 0
@@ -94,7 +93,7 @@ def run(batch_size, threshold, norm_update):
         if best_cluster == -1:
             clusters.append(Cluster(tokens))
             update_index(index, len(clusters)-1, tokens)
-            print('%d\t%s\tNA' % (len(clusters)-1, line))
+            print('%d\t%s\t-' % (len(clusters)-1, line))
         else:
             clusters[best_cluster].add(tokens)
             update_index(index, best_cluster, tokens)
@@ -109,7 +108,7 @@ def _void_f(*args,**kwargs):
 def main():
     args = docopt(__doc__)
     try:
-        run(int(args['--batch']), float(args['--threshold']),
+        run(float(args['--threshold']),
             int(args['--update-norms']))
     except (BrokenPipeError, IOError):
         sys.stdout.write = _void_f
