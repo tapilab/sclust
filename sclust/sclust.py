@@ -59,11 +59,13 @@ def update_index(index, clusterid, tokens):
     for t in tokens:
         index[t].add(clusterid)
 
-def search_index(index, top_words):
-    clusters = set()
+def search_index(index, top_words, min_match=2):
+    # require at least two words to match.
+    clusters = Counter()
     for w in top_words:
-        clusters |= index[w]
-    return clusters
+        clusters.update(index[w])
+    return [c for c, v in clusters.items() if v >= min_match]
+    # return clusters
 
 def run(threshold, norm_update):
     doc_freqs = Counter()
