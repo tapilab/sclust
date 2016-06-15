@@ -7,7 +7,6 @@ usage:
 Options
     -h, --help
     -t, --threshold <N>    Similarity threshold in [0,1]. Higher means sentences must be more similar to be merged. [default: .2]
-    -u, --update-norms <N>    Update cluster norms every N documents. Larger values reduce run-time, but sacrifice accuracy. [default: 1]
 """
 from collections import Counter, defaultdict
 from docopt import docopt
@@ -17,24 +16,6 @@ import re
 import sys
 
 
-def norm(tokens, idfs):
-    return sqrt(np.sum((count * idfs[token])**2
-                       for token, count in tokens.items()))
-
-def norm_dict(tokens, idfs):
-    d = defaultdict(lambda: 0)
-    denom = 0
-    for token, count in tokens.items():
-        v = count * idfs[token]
-        d[token] = v
-        denom += v*v
-    denom = sqrt(denom)
-    if denom == 0:
-        denom = 1
-    for token, val in d.items():
-        d[token] = val / denom
-    return d
-
 def tokenize(line):
     return re.findall('\w+', line.lower())
 
@@ -42,53 +23,68 @@ def tokenize(line):
 def idf(token, doc_freqs, docnum):
     return log10((docnum + 1) / doc_freqs[token])
 
+
 class Cluster:
     def __init__(self, token_counts):
-        self.token_counts = Counter(token_counts)
-        self.cluster_norm = None
+        """
+        >>> c = Cluster({'cat': 2, 'dog': 1})
+        >>> c.term_scores['cat']  # doctest: +ELLIPSIS
+        0.666...
+        >>> c.score({'cat': 10}, {'cat': .5})  # doctest: +ELLIPSIS
+        3.333...
+        >>> c.add({'cat': 3, 'dog': 4})
+        >>> c.term_scores['cat']
+        0.5
+        >>> c.term_scores['dog']
+        0.5
+        """
+        self.term_scores = token_counts
+        self.total_tokens = sum(token_counts.values())
+        for t, v in token_counts.items():
+            self.term_scores[t] = v / self.total_tokens
 
-    def add(self, tokens):
-        self.token_counts.update(tokens)
+    def add(self, token_counts):
+        new_total_tokens = self.total_tokens + sum(token_counts.values())
+        for t, v in self.term_scores.items():
+            self.term_scores[t] = ((v * self.total_tokens) + token_counts[t]) / new_total_tokens
+        self.total_tokens = new_total_tokens
 
-    def score(self, normed_doc, idfs, do_update_norm):
-        if do_update_norm or not self.cluster_norm:
-            self.normed_cluster = norm_dict(self.token_counts, idfs)
-        return sum(value * self.normed_cluster[token] for token, value in normed_doc.items())
+    def score(self, token_counts, idfs):
+        return sum(value * self.term_scores[token] * idfs[token] for token, value in token_counts.items())
 
 def update_index(index, clusterid, tokens):
     for t in tokens:
         index[t].add(clusterid)
 
 def search_index(index, top_words, min_match=2):
-    # require at least two words to match.
+    # Require at least min_match terms to match.
     clusters = Counter()
     for w in top_words:
         clusters.update(index[w])
     return [c for c, v in clusters.items() if v >= min_match]
-    # return clusters
 
-def run(threshold, norm_update):
+def run(threshold):
     doc_freqs = Counter()
     clusters = []
     docnum = 0
     index = defaultdict(set)
+    nmatch = 0
     for line in sys.stdin:
         docnum += 1
-        do_update_norm = True if docnum % norm_update == 0 else False
         line = line.strip()
         tokens = Counter(tokenize(line))
         if len(tokens) == 0:
             continue
         doc_freqs.update(tokens)
-        idfs = {token: idf(token, doc_freqs, docnum) for token, value in doc_freqs.items()}
-        normed_doc = norm_dict(tokens, idfs)
-        # What are the five words with highest tfidf weight? Use to filter comparisons.
-        top_words = sorted(tokens, key=lambda x: -normed_doc[x])[:5]  # (doc_freqs[token], token) for token in tokens)
+        idfs = {token: idf(token, doc_freqs, docnum) for token in tokens}
+        # What are the four words with highest tfidf weight? Use to filter comparisons.
+        top_words = sorted(tokens, key=lambda x: -idfs[x])[:4]  # (doc_freqs[token], token) for token in tokens)
         best_cluster = -1
         best_score = -1
-        for ci in search_index(index, top_words):
+        for ci in search_index(index, top_words, min_match=2):
+            nmatch += 1
             cluster = clusters[ci]
-            score = cluster.score(normed_doc, idfs, do_update_norm)
+            score = cluster.score(tokens, idfs)
             if score > best_score and score > threshold:
                 best_cluster = ci
                 best_score = score
@@ -100,6 +96,7 @@ def run(threshold, norm_update):
             clusters[best_cluster].add(tokens)
             update_index(index, best_cluster, tokens)
             print('%d\t%s\t%g' % (best_cluster, line, best_score))
+        # print('avg num clusters searched per doc=%.1f' % (nmatch / docnum))
         sys.stdout.flush()
 
 
@@ -110,8 +107,7 @@ def _void_f(*args,**kwargs):
 def main():
     args = docopt(__doc__)
     try:
-        run(float(args['--threshold']),
-            int(args['--update-norms']))
+        run(float(args['--threshold']))
     except (BrokenPipeError, IOError):
         sys.stdout.write = _void_f
         sys.stdout.flush = _void_f

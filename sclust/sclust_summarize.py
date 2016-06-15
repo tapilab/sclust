@@ -9,7 +9,7 @@ Options
     -h, --help
     -f, --frequency <F>               Print clusters every F lines [default: 1000]
     -n, --num-clusters-to-print <N>   Number of top clusters to print [default: 10]
-    -k, --num-docs-to-print <K>       Number of documents per cluster to print [default: 1]
+    -k, --num-docs-to-print <K>       Number of documents per cluster to print [default: 3]
 """
 from collections import Counter, defaultdict, deque
 from docopt import docopt
