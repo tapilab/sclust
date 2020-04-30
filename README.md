@@ -21,12 +21,12 @@ You can pipe it to `sclust` to get cluster assignments:
 ```
 $ cat /tmp/foo | sclust
 0	Hi there, how are you?	-
-0	hi where how you are	0.352689
-1	i like to sing	-
-1	I am going to sing	0.401597
-0	hi where how you are	0.82069
-0	hi there how...	0.45287
-2	do you sing???	-
+1	hi where how you are	-
+2	i like to sing	-
+2	I am going to sing	0.298455
+1	hi where how you are	0.336248
+0	hi there how...	0.206029
+3	do you sing???	-
 ```
 Here, the first column is the cluster assignment and the third column is the cosine similarity between that line and the cluster it is assigned to. The algorithm is online (as opposed to batch), so order matters. At each iteration, a document is assigned to its closest cluster, according to cosine similarity.
 
@@ -36,21 +36,21 @@ $ sclust --help
 A command-line tool to quickly cluster sentences.
 
 usage:
-    sclust [--help --threshold <T> --update-norms <N>]
+    sclust [--help --threshold <T> --update-norms <N> --prune-frequency <P>]
 
 Options
     -h, --help
-    -t, --threshold <N>    Similarity threshold in [0,1]. Higher means sentences must be more similar to be merged. [default: .2]
-    -u, --update-norms <N>    Update cluster norms every N documents. Larger values reduce run-time, but sacrifice accuracy. [default: 1]
+    -p, --prune-frequency <P>   Delete small clusters every P lines [default: -1]
+    -t, --threshold <N>         Similarity threshold in [0,1]. Higher means sentences must be more similar to be merged. [default: .2]
 ```
 
 There is also a tool `sclust-summarize` to view the output.
 
 $ sclust-summarize --help
+```
 A command-line tool to print the top clusters output by sclust in a streaming fashion.
 E.g., cat data.txt | sclust | sclust-summarize
 
-```
 usage:
     sclust-summarize [--help --frequency <F> --num-docs-to-print <N> --num-clusters-to-print <K>]
 
@@ -58,7 +58,7 @@ Options
     -h, --help
     -f, --frequency <F>               Print clusters every F lines [default: 1000]
     -n, --num-clusters-to-print <N>   Number of top clusters to print [default: 10]
-    -k, --num-docs-to-print <K>       Number of documents per cluster to print [default: 1]
+    -k, --num-docs-to-print <K>       Number of documents per cluster to print [default: 3]
 ```
 
 E.g.,
@@ -66,14 +66,15 @@ E.g.,
 ```
 $ cat /tmp/foo | sclust | sclust-summarize  -k 3
 
----------7 documents, 3 clusters---------
+---------7 documents, 4 clusters---------
 
-4	0	hi where how you are	0.352689
- 	 	hi where how you are	0.82069
- 	 	hi there how...	0.45287
-2	1	i like to sing	-
- 	 	I am going to sing	0.401597
-1	2	do you sing???	-
+2	0	Hi there, how are you?	-
+ 	 	hi there how...	0.206029
+2	1	hi where how you are	-
+ 	 	hi where how you are	0.336248
+2	2	i like to sing	-
+ 	 	I am going to sing	0.298455
+1	3	do you sing???	-
 ```
 Here, the first column is cluster frequency, the second column is cluster id. You can optionally print the most recent `k` documents added to the cluster.
 
