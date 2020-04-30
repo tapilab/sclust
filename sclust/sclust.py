@@ -2,12 +2,14 @@
 """A command-line tool to quickly cluster sentences.
 
 usage:
-    sclust [--help --threshold <T> --update-norms <N> --prune-frequency <P>]
+    sclust [--help --threshold <T> --prune-frequency <P> --min-match <M> --term-filter <K>]
 
 Options
     -h, --help
     -p, --prune-frequency <P>   Delete small clusters every P lines [default: -1]
     -t, --threshold <N>         Similarity threshold in [0,1]. Higher means sentences must be more similar to be merged. [default: .2]
+    -m, --min-match <M>         Minimum number of words that must match to place a document in a cluster. [default: 2]
+    -k, --term-filter <K>       Use the top K terms from each document to get a reduced set of possible matches.[default: 5]
 """
 from collections import Counter, defaultdict
 from docopt import docopt
@@ -85,7 +87,7 @@ def prune_clusters(clusters, index, n=3):
         del index[t]
     return pruned_clusters, index
 
-def run(threshold, prune_freq):
+def run(threshold, prune_freq, min_match, term_filter):
     cluster_count = 0
     doc_freqs = Counter()
     clusters = []
@@ -101,10 +103,10 @@ def run(threshold, prune_freq):
         doc_freqs.update(tokens)
         idfs = {token: idf(token, doc_freqs, docnum) for token in tokens}
         # What are the four words with highest tfidf weight? Use to filter comparisons.
-        top_words = sorted(tokens, key=lambda x: -idfs[x])[:4]  # (doc_freqs[token], token) for token in tokens)
+        top_words = sorted(tokens, key=lambda x: -idfs[x])[:term_filter]  # (doc_freqs[token], token) for token in tokens)
         best_cluster = None
         best_score = -1
-        for cluster in search_index(index, top_words, min_match=2):
+        for cluster in search_index(index, top_words, min_match=min_match):
             nmatch += 1
             # cluster = clusters[ci]
             score = cluster.score(tokens, idfs)
@@ -139,7 +141,10 @@ def _void_f(*args,**kwargs):
 def main():
     args = docopt(__doc__)
     try:
-        run(float(args['--threshold']), float(args['--prune-frequency']))
+        run(float(args['--threshold']),
+            float(args['--prune-frequency']),
+            int(args['--min-match']),
+            int(args['--term-filter']))
     except (BrokenPipeError, IOError):
         sys.stdout.write = _void_f
         sys.stdout.flush = _void_f
